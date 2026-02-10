@@ -12,6 +12,8 @@ export interface Video {
   thumbnail: string;
   duration: number;
   added_by: string;
+  video_type: 'youtube' | 'direct';
+  url: string;
 }
 
 export interface SyncState {
@@ -20,6 +22,8 @@ export interface SyncState {
   timestamp: number;
   is_playing: boolean;
   last_updated: number;
+  video_type: 'youtube' | 'direct';
+  url: string;
 }
 
 export interface RoomSettings {

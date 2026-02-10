@@ -30,11 +30,13 @@ class User:
 @dataclass
 class Video:
     video_id: str  # internal uuid
-    youtube_id: str  # e.g. "dQw4w9WgXcQ"
+    youtube_id: str  # e.g. "dQw4w9WgXcQ" (empty for direct videos)
     title: str
     thumbnail: str
     duration: float
     added_by: str  # user_id
+    video_type: str = "youtube"  # "youtube" | "direct"
+    url: str = ""  # full URL for direct videos
 
     def to_dict(self) -> dict:
         return {
@@ -44,6 +46,8 @@ class Video:
             "thumbnail": self.thumbnail,
             "duration": self.duration,
             "added_by": self.added_by,
+            "video_type": self.video_type,
+            "url": self.url,
         }
 
 
@@ -54,6 +58,8 @@ class SyncState:
     timestamp: float = 0.0
     is_playing: bool = False
     last_updated: float = field(default_factory=time.time)
+    video_type: str = "youtube"  # "youtube" | "direct"
+    url: str = ""  # full URL for direct videos
 
     def current_server_time(self) -> float:
         if self.is_playing:
@@ -67,6 +73,8 @@ class SyncState:
             "timestamp": self.current_server_time(),
             "is_playing": self.is_playing,
             "last_updated": self.last_updated,
+            "video_type": self.video_type,
+            "url": self.url,
         }
 
 

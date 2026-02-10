@@ -26,7 +26,9 @@ export default function Navbar() {
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isUrl = extractVideoId(input.trim()) !== null;
+  const isYouTubeUrl = extractVideoId(input.trim()) !== null;
+  const isDirectUrl = /^https?:\/\/.+\.(mp4|webm|ogg|mov|mkv|avi)(\?.*)?$/i.test(input.trim());
+  const isUrl = isYouTubeUrl || isDirectUrl;
 
   const handleAddByUrl = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +67,8 @@ export default function Navbar() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     // If it looks like a URL, don't search
-    if (extractVideoId(value.trim()) !== null) {
+    const trimmed = value.trim();
+    if (extractVideoId(trimmed) !== null || /^https?:\/\/.+\.(mp4|webm|ogg|mov|mkv|avi)(\?.*)?$/i.test(trimmed)) {
       setResults([]);
       setShowDropdown(false);
       return;
@@ -109,7 +112,7 @@ export default function Navbar() {
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onFocus={() => results.length > 0 && setShowDropdown(true)}
-                  placeholder="Pesquise ou cole a URL do YouTube..."
+                  placeholder="Pesquise ou cole a URL de um vídeo..."
                   className="w-full bg-deep border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
                 />
                 {loading && (

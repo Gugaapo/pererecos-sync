@@ -6,7 +6,7 @@ const initialState: RoomState = {
   room_id: '',
   users: [],
   queue: [],
-  sync: { current_video_id: null, youtube_id: null, timestamp: 0, is_playing: false, last_updated: 0 },
+  sync: { current_video_id: null, youtube_id: null, timestamp: 0, is_playing: false, last_updated: 0, video_type: 'youtube', url: '' },
   settings: { max_videos_per_user: 10, skip_vote_threshold: 0.5 },
   chat_history: [],
   your_user_id: '',

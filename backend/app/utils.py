@@ -28,3 +28,16 @@ def extract_youtube_id(url: str) -> str | None:
     if re.fullmatch(r"[a-zA-Z0-9_-]{11}", url.strip()):
         return url.strip()
     return None
+
+
+_VIDEO_EXTENSIONS = re.compile(r"\.(mp4|webm|ogg|mov|mkv|avi)(\?.*)?$", re.IGNORECASE)
+
+
+def detect_video_url(url: str) -> str | None:
+    """Returns the URL if it looks like a direct video link, else None."""
+    url = url.strip()
+    if not url.startswith(("http://", "https://")):
+        return None
+    if _VIDEO_EXTENSIONS.search(url):
+        return url
+    return None

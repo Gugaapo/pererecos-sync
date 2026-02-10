@@ -12,7 +12,7 @@ import httpx
 from .config import CHAT_HISTORY_LIMIT, HOST_GRACE_PERIOD, MAX_MESSAGE_LENGTH
 from .connection_manager import ConnectionManager
 from .models import ChatMessage, RoomSettings, SyncState, User, UserRole, Video
-from .utils import extract_youtube_id, generate_user_id, generate_video_id
+from .utils import detect_video_url, extract_youtube_id, generate_user_id, generate_video_id
 
 logger = logging.getLogger(__name__)
 
@@ -140,25 +140,39 @@ class Room:
     # ── Queue Management ─────────────────────────────────────────
 
     async def add_video(self, user_id: str, url: str) -> dict[str, Any] | None:
-        youtube_id = extract_youtube_id(url)
-        if not youtube_id:
-            return {"type": "error", "code": "invalid_url", "message": "Invalid YouTube URL"}
-
         user_video_count = sum(1 for v in self.queue if v.added_by == user_id)
         if user_video_count >= self.settings.max_videos_per_user:
             return {"type": "error", "code": "queue_limit", "message": "You've reached the max videos per user"}
 
-        # Fetch metadata via oEmbed
-        title, thumbnail = await self._fetch_video_meta(youtube_id)
+        youtube_id = extract_youtube_id(url)
+        direct_url = detect_video_url(url)
 
-        video = Video(
-            video_id=generate_video_id(),
-            youtube_id=youtube_id,
-            title=title,
-            thumbnail=thumbnail,
-            duration=0.0,
-            added_by=user_id,
-        )
+        if youtube_id:
+            title, thumbnail = await self._fetch_video_meta(youtube_id)
+            video = Video(
+                video_id=generate_video_id(),
+                youtube_id=youtube_id,
+                title=title,
+                thumbnail=thumbnail,
+                duration=0.0,
+                added_by=user_id,
+                video_type="youtube",
+            )
+        elif direct_url:
+            title = self._title_from_url(direct_url)
+            video = Video(
+                video_id=generate_video_id(),
+                youtube_id="",
+                title=title,
+                thumbnail="",
+                duration=0.0,
+                added_by=user_id,
+                video_type="direct",
+                url=direct_url,
+            )
+        else:
+            return {"type": "error", "code": "invalid_url", "message": "URL inválida. Cole um link do YouTube ou um link direto de vídeo (.mp4, .webm, etc.)"}
+
         self.queue.append(video)
 
         was_empty = self.sync.current_video_id is None
@@ -208,6 +222,8 @@ class Room:
     def _set_current_video(self, video: Video) -> None:
         self.sync.current_video_id = video.video_id
         self.sync.youtube_id = video.youtube_id
+        self.sync.video_type = video.video_type
+        self.sync.url = video.url
         self.sync.timestamp = 0.0
         self.sync.is_playing = True
         self.sync.last_updated = time.time()
@@ -386,6 +402,16 @@ class Room:
             return False
         # Don't destroy rooms less than 30s old (allow time for first join)
         return (time.time() - self.created_at) > 30
+
+    @staticmethod
+    def _title_from_url(url: str) -> str:
+        from urllib.parse import unquote, urlparse
+        path = urlparse(url).path
+        filename = unquote(path.rsplit("/", 1)[-1])
+        # Strip extension
+        if "." in filename:
+            filename = filename.rsplit(".", 1)[0]
+        return filename or "Video"
 
     @staticmethod
     async def _fetch_video_meta(youtube_id: str) -> tuple[str, str]:

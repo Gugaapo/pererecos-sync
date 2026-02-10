@@ -10,7 +10,7 @@ export default function PlaylistTab() {
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {state.queue.length === 0 ? (
           <p className="text-text-muted text-sm text-center py-8">
-            A fila está vazia. Cole uma URL do YouTube acima para adicionar.
+            A fila está vazia. Pesquise ou cole uma URL acima para adicionar.
           </p>
         ) : (
           state.queue.map((video) => (
