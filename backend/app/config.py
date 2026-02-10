@@ -1,3 +1,12 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
+
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
+
 ALLOWED_ORIGINS = [
     "https://tossemideia.cloud",
     "http://localhost:5173",

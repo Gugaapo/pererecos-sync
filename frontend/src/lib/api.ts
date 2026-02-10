@@ -23,6 +23,19 @@ export async function listRooms(): Promise<RoomListItem[]> {
   return res.json();
 }
 
+export interface YouTubeSearchResult {
+  youtube_id: string;
+  title: string;
+  thumbnail: string;
+  channel: string;
+}
+
+export async function searchYouTube(query: string): Promise<YouTubeSearchResult[]> {
+  const res = await fetch(`${BASE}/youtube/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export function getWsUrl(roomId: string): string {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${proto}//${window.location.host}/sync/ws/${roomId}`;

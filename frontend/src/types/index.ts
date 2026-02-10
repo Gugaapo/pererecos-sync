@@ -42,6 +42,13 @@ export interface SkipVoteState {
   voters: string[];
 }
 
+export interface SearchResult {
+  youtube_id: string;
+  title: string;
+  thumbnail: string;
+  channel: string;
+}
+
 export interface RoomState {
   room_id: string;
   users: User[];

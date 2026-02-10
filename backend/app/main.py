@@ -4,8 +4,12 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
+from fastapi.responses import JSONResponse
 
+import httpx
+
+from .config import YOUTUBE_API_KEY
 from .room_manager import room_manager
 from .sync_engine import heartbeat_loop
 from .ws_endpoint import router as ws_router
@@ -56,6 +60,42 @@ async def list_rooms():
             "current_video": room.queue[0].title if room.queue else None,
         })
     return rooms
+
+
+@app.get("/api/youtube/search")
+async def youtube_search(q: str = Query(..., min_length=1)):
+    if not YOUTUBE_API_KEY:
+        return JSONResponse(status_code=500, content={"error": "YouTube API key not configured"})
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(
+                "https://www.googleapis.com/youtube/v3/search",
+                params={
+                    "part": "snippet",
+                    "type": "video",
+                    "maxResults": 8,
+                    "q": q,
+                    "key": YOUTUBE_API_KEY,
+                },
+            )
+            if resp.status_code != 200:
+                return JSONResponse(status_code=resp.status_code, content={"error": "YouTube API error"})
+            data = resp.json()
+            results = []
+            for item in data.get("items", []):
+                video_id = item.get("id", {}).get("videoId")
+                if not video_id:
+                    continue
+                snippet = item.get("snippet", {})
+                results.append({
+                    "youtube_id": video_id,
+                    "title": snippet.get("title", ""),
+                    "thumbnail": snippet.get("thumbnails", {}).get("medium", {}).get("url", ""),
+                    "channel": snippet.get("channelTitle", ""),
+                })
+            return results
+    except httpx.TimeoutException:
+        return JSONResponse(status_code=504, content={"error": "YouTube API timeout"})
 
 
 @app.get("/api/rooms/{room_id}")
